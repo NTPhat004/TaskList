@@ -1,0 +1,29 @@
+﻿@model TaskModel
+
+<div class="card mb-4 border-0 task-container" data-task-id="@Model.Id">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="task-title-container" data-task-id="@Model.Id">
+            <h5 class="mb-0 task-title">@Model.Title</h5>
+            <input type="text" class="form-control form-control-sm edit-task-title d-none" value="@Model.Title">
+        </div>
+        <button type="button" class="btn btn-sm border-0 shadow-none toggle-subtasks" data-task-id="@Model.Id">
+            <i class="bi bi-chevron-down"></i>
+        </button>
+    </div>
+
+    <!-- Bọc SubTask + Nút Thêm vào div này -->
+    <div class="subtask-container" id="subtaskContainer-@Model.Id">
+        <ul class="list-group list-group-flush subtask-list" id="subtaskList-@Model.Id">
+            @foreach (var subTask in Model.SubTasks)
+            {
+                @Html.Partial("_SubTaskItem", subTask)
+            }
+        </ul>
+
+        <div class="text-center">
+            <button type="button" class="btn border-0 shadow-none p-2 add-subtask" data-task-id="@Model.Id">
+                <i class="bi bi-plus-circle"></i> Thêm bước
+            </button>
+        </div>
+    </div>
+</div>

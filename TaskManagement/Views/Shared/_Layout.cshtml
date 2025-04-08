@@ -1,0 +1,153 @@
+﻿@using System.Security.Claims
+
+@{
+    var userName = User.Identity.IsAuthenticated ? User.FindFirst(ClaimTypes.Name)?.Value : "Guest";
+    var userAvatar = User.Identity.IsAuthenticated ? User.FindFirst("ProfilePicture")?.Value : "/images/default-avatar.jpg";
+}
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TaskManagement</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/Layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/TaskManagement.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar bg-light vh-100 p-3 d-flex flex-column align-items-start">
+            <!-- Logo -->
+            <div class="logo-container mb-1">
+                <img src="~/images/logo-full.png" alt="Logo Full" class="sidebar-logo logo-full" />
+                <img src="~/images/logo-mini.png" alt="Logo Mini" class="sidebar-logo logo-mini d-none" />
+            </div>
+
+            <!-- Menu -->
+            <div class="menu w-100" id="sidebar-menu">
+                <a asp-action="Index" asp-controller="Home"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    <span class="fw-bold">Việc hôm nay</span>
+                </a>
+
+                <a asp-action="Activity" asp-controller="Home"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentAction == "Activity" ? "active" : "")">
+                    <i class="bi bi-graph-up me-2"></i>
+                    <span class="fw-bold">Hoạt động</span>
+                </a>
+
+                <a asp-action="Schedule" asp-controller="Home"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentAction == "Schedule" ? "active" : "")">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    <span class="fw-bold">Lịch trình</span>
+                </a>
+
+                <a asp-action="Index" asp-controller="Task"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentController == "Task" ? "active" : "")">
+                    <i class="bi bi-person me-2"></i>
+                    <span class="fw-bold">Cá nhân</span>
+                </a>
+
+                <a asp-action="Index" asp-controller="Group"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentController == "Group" ? "active" : "")">
+                    <i class="bi bi-people me-2"></i>
+                    <span class="fw-bold">Nhóm</span>
+                </a>
+
+                <a asp-action="Completed" asp-controller="Home"
+                   class="btn btn-custom w-100 text-start d-flex align-items-center mt-2 @(currentAction == "Completed" ? "active" : "")">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span class="fw-bold">Đã hoàn thành</span>
+                </a>
+                <!-- Thêm các menu khác -->
+            </div>
+        </nav>
+
+        <!-- Main Content with Header -->
+        <div class="flex-grow-1 d-flex flex-column">
+            <!-- Header -->
+            <header class="d-flex justify-content-between align-items-center px-4 py-2 border-bottom bg-white shadow-sm">
+                <!-- Left: Toggle + Search -->
+                <div class="d-flex align-items-center gap-3">
+                    <button id="toggle-sidebar" class="btn btn-outline-secondary btn-sm">☰</button>
+                    <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm..." style="width: 300px;">
+                </div>
+
+                <!-- Right: Inbox, Avatar, Name, Settings -->
+                <div class="d-flex align-items-center gap-3">
+                    <a asp-controller="Invitation" asp-action="Index" class="text-dark position-relative" id="inbox-icon">
+                        <i class="bi bi-inbox fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="invitation-count">
+                            0
+                        </span>
+                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="~/images/default-avatar.jpg" alt="Avatar" class="rounded-circle" width="36">
+                        <span class="fw-bold">@userName</span>
+                    </div>
+                    <a href="/Settings" class="text-dark"><i class="bi bi-gear fs-5"></i></a>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="p-4">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        toastr.options = {
+            "closeButton": true, // Thêm nút đóng
+            "progressBar": true, // Thêm thanh tiến trình
+            "timeOut": "5000", // Thời gian hiển thị thông báo (5 giây)
+            "extendedTimeOut": "1000", // Thời gian hiển thị khi hover chuột
+            "positionClass": "toast-top-right", // Vị trí thông báo
+            "showMethod": "fadeIn", // Phương thức hiển thị
+            "hideMethod": "fadeOut", // Phương thức ẩn đi
+            "showDuration": 300, // Thời gian hiển thị khi vào
+            "hideDuration": 300, // Thời gian ẩn đi
+            "newestOnTop": true, // Hiển thị cái mới nhất lên trên cùng
+        };
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        connection.start().then(function () {
+            console.log("SignalR connected.");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        connection.on("ReceiveInvitation", function (message) {
+            // Hiển thị thông báo toast
+            console.log("Thông báo nhận được:", message);
+            toastr.info(message);
+
+            // Tăng số lượng lời mời
+            const badge = document.getElementById("invitation-count");
+            let current = parseInt(badge.innerText || "0");
+            badge.innerText = current + 1;
+            badge.classList.remove("d-none");
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

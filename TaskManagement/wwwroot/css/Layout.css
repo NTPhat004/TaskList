@@ -1,0 +1,71 @@
+﻿body {
+    overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+    width: 60px !important;
+    padding: 1rem 0.5rem !important;
+}
+
+    .sidebar.collapsed #sidebar-menu span {
+        display: none;
+    }
+
+.sidebar-logo {
+    margin-left:10px;
+    width: 100%;
+    max-width: 130px;
+    transition: all 0.3s ease;
+}
+
+.logo-mini {
+    margin-left: 0;
+    max-width: 40px;
+}
+
+/* Khi sidebar rút gọn */
+.sidebar.collapsed .logo-full {
+    display: none !important;
+}
+
+.sidebar.collapsed .logo-mini {
+    display: block !important;
+}
+
+.sidebar .btn-custom i {
+    margin-right: 0.5rem;
+}
+
+.main-content {
+    transition: margin-left 0.3s;
+}
+
+.task-box {
+    height: 150px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.btn-custom {
+    background-color: transparent;
+    border: none;
+    color: #000;
+    font-weight: bold;
+}
+
+    .btn-custom:hover {
+        background-color: #e0e0e0;
+        /* Màu nền khi hover */
+        color: #000;
+    }
+
+    .btn-custom.active {
+        background-color: #007bff;
+        /* Màu nền khi nút được chọn */
+        color: #fff;
+    }
+
+.toast-message {
+    color: black !important;
+}

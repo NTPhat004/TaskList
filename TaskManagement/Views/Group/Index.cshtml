@@ -1,0 +1,73 @@
+﻿@model IEnumerable<GroupModel>
+@{
+    var imagePaths = new List<string>
+    {
+        "/images/background1.jpg",
+        "/images/background2.jpg",
+        "/images/background3.jpg",
+        "/images/background4.jpg",
+        "/images/background5.jpg"
+    };
+}
+<div class="row g-3" id="group-container">
+    @foreach (var group in Model)
+    {
+        // Lấy ngẫu nhiên một hình ảnh từ danh sách
+        var randomImage = imagePaths[new Random().Next(imagePaths.Count)];
+
+        <div class="col-md-3" style="text-align:center">
+            <h5>@group.Name</h5>
+            <a href="@Url.Action("Tasks", "Group", new { groupId = group.Id })" class="text-decoration-none text-white">
+                <div class="task-box"
+                     style="background-image: url('@randomImage'); background-size: cover; background-position: center; height: 150px;">
+                </div>
+            </a>
+        </div>
+    }
+
+    <!-- Button thêm Group -->
+    <div class="col-md-3" style="">
+        <button class="task-box d-flex justify-content-center align-items-center border-0 bg-transparent"
+                id="add-group-btn" style="cursor: pointer;width:100%; height:100%">
+            <i class="bi bi-plus-circle" style="font-size: 2rem;"></i>
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#add-group-btn").click(function () {
+                Swal.fire({
+                    title: "Tạo nhóm mới",
+                    input: "text",
+                    inputPlaceholder: "Nhập tên nhóm...",
+                    showCancelButton: true,
+                    confirmButtonText: "Tạo",
+                    cancelButtonText: "Hủy",
+                    preConfirm: (groupName) => {
+                        if (!groupName) {
+                            Swal.showValidationMessage("Tên nhóm không được để trống!");
+                        }
+                        return groupName;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Group/Create",
+                            type: "POST",
+                            data: { groupName: result.value },
+                            success: function (response) {
+                                $("#group-container").html(response);
+                                Swal.fire("Thành công!", "Nhóm đã được tạo.", "success");
+                            },
+                            error: function () {
+                                Swal.fire("Lỗi!", "Không thể tạo nhóm, thử lại sau.", "error");
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

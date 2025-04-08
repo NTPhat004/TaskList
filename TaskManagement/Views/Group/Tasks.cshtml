@@ -1,0 +1,146 @@
+﻿@model TaskManagement.Models.ViewModels.GroupTasksViewModel
+
+<h5 class="mb-4">Các công việc trong nhóm: @Model.Group.Name</h5>
+
+<!-- Modal nhập email -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inviteModalLabel">Mời thành viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="invite-email" class="form-label">Email người nhận</label>
+                    <input type="email" class="form-control" id="invite-email" placeholder="Nhập email">
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-primary" id="btn-send-invite">Thêm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nút Thêm Công Việc -->
+<button type="button" class="btn custom-btn mb-3" id="addTaskButton">
+    <i class="bi bi-plus"></i> Thêm Công Việc
+</button>
+<!-- Danh sách Task -->
+<div id="taskList">
+    @foreach (var task in Model.Tasks)
+    {
+        @Html.Partial("_TaskItem", task)
+    }
+</div>
+
+<!-- Sidebar danh sách thành viên -->
+<div id="members-sidebar" style="
+    position: fixed;
+    top: 55px;
+    right: -300px;
+    height: 100%;
+    width: 300px;
+    background-color: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    z-index: 1040;
+    overflow-y: auto;
+    transition: right 0.3s ease-in-out;
+">
+    <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            Thành viên nhóm: <span id="member-count-badge">
+                @Model.Group.Members.Count()
+            </span>
+        </h5>
+        <button class="btn btn-outline-primary btn-sm" id="btn-add-member" data-bs-toggle="modal" data-bs-target="#inviteModal">
+            <i class="bi bi-person-plus"></i> 
+        </button>
+    </div>
+    <div class="p-3">
+        @foreach (var member in Model.Group.Members)
+        {
+            <div class="d-flex align-items-center mb-3">
+                <img src="@(member.User.ProfilePicture ?? "/images/default-avatar.jpg")" class="rounded-circle me-2" width="36" height="36" />
+                <div>
+                    <strong>@member.User.Username</strong><br />
+                    <small class="text-muted">@member.User.Email</small>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div id="toggle-members-sidebar" style="
+    position: fixed;
+    top: 20%;
+    transform: translateY(-50%);
+    right: 0;
+    z-index: 1050;
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: right 0.3s ease-in-out;
+">
+    <i id="toggle-icon" class="bi bi-people-fill fs-5"></i>
+</div>
+
+
+@section Scripts{
+    <script>
+        const sidebar = document.getElementById('members-sidebar');
+        const toggleBtn = document.getElementById('toggle-members-sidebar');
+        const toggleIcon = document.getElementById('toggle-icon');
+
+        let isSidebarOpen = false;
+
+        toggleBtn.addEventListener('click', function () {
+            if (isSidebarOpen) {
+                // Đóng sidebar
+                sidebar.style.right = '-300px';
+                toggleBtn.style.right = '0';
+                toggleIcon.className = 'bi bi-people-fill fs-5';
+            } else {
+                // Mở sidebar
+                sidebar.style.right = '0';
+                toggleBtn.style.right = '280px'; // nằm một phần trong sidebar
+                toggleIcon.className = 'bi bi-chevron-right fs-5';
+            }
+            isSidebarOpen = !isSidebarOpen;
+        });
+
+        $(document).ready(function () {
+            $("#btn-send-invite").click(function () {
+                const email = $("#invite-email").val().trim();
+                const groupId = "@Model.Group.Id"; // hoặc truyền groupId từ ViewModel
+
+                if (email === "") {
+                    toastr.warning("Vui lòng nhập email.");
+                    return;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Group/InviteMember",
+                    data: { groupId: groupId, email: email },
+                    success: function () {
+                        $('#inviteModal').modal('hide');
+                        toastr.success("Đã gửi lời mời.");
+                    },
+                    error: function () {
+                        toastr.error("Gửi lời mời thất bại.");
+                    }
+                });
+            });
+        });
+    </script>
+}

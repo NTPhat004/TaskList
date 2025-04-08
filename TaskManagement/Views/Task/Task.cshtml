@@ -1,0 +1,157 @@
+﻿@model List<TaskModel>
+
+<!-- Nút Thêm Công Việc -->
+<button type="button" class="btn custom-btn mb-3" id="addTaskButton">
+    <i class="bi bi-plus"></i> Thêm Công Việc
+</button>
+
+<!-- Danh sách Task -->
+<div id="taskList">
+    @foreach (var task in Model)
+    {
+        @Html.Partial("_TaskItem", task)
+    }
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-subtasks").forEach(button => {
+            button.addEventListener("click", function () {
+                let taskId = this.getAttribute("data-task-id");
+                let subtaskContainer = document.getElementById("subtaskContainer-" + taskId);
+
+                if (subtaskContainer.style.display === "none") {
+                    subtaskContainer.style.display = "block";
+                    this.innerHTML = '<i class="bi bi-chevron-down"></i>'; // Mũi tên xuống
+                } else {
+                    subtaskContainer.style.display = "none";
+                    this.innerHTML = '<i class="bi bi-chevron-right"></i>'; // Mũi tên sang phải
+                }
+            });
+        });
+    });
+
+
+    $(document).ready(function () {
+        // 🟢 Thêm Task mới
+        $("#addTaskButton").click(function () {
+            $.ajax({
+                url: "/Task/AddTask",
+                type: "POST",
+                dataType: "html",
+                success: function (response) {
+                    $("#taskList").append(response); // Thêm Task vào danh sách
+                },
+                error: function () {
+                    alert("Có lỗi xảy ra, vui lòng thử lại!");
+                }
+            });
+        });
+
+        $(document).on("click", ".add-subtask", function () {
+            var taskId = $(this).data("task-id");
+
+            // Tạo một ô nhập cho SubTask
+            var subTaskForm = `
+            <li class="list-group-item subtask-input-container">
+                <div class="d-flex align-items-center">
+                    <input type="text" class="form-control me-2 subtask-name" placeholder="Tên bước công việc" />
+                    <input type="date" class="form-control me-2 subtask-deadline" />
+                    <button class="btn btn-success btn-sm save-subtask" data-task-id="${taskId}"><i class="bi bi-check-lg"></i></button>
+                    <button class="btn btn-danger btn-sm cancel-subtask"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </li>`;
+
+            // Thêm ô nhập vào danh sách
+            $("#subtaskList-" + taskId).append(subTaskForm);
+        });
+
+        // 🟢 Khi bấm "Lưu" SubTask
+        $(document).on("click", ".save-subtask", function () {
+            var taskId = $(this).data("task-id");
+            var subTaskName = $(this).closest(".subtask-input-container").find(".subtask-name").val();
+            var subTaskDeadline = $(this).closest(".subtask-input-container").find(".subtask-deadline").val();
+            var subTaskContainer = $(this).closest(".subtask-input-container");
+
+            if (!subTaskName.trim()) {
+                alert("Vui lòng nhập tên bước công việc!");
+                return;
+            }
+
+            $.ajax({
+                url: "/Task/AddSubTask",
+                type: "POST",
+                data: { taskId: taskId, name: subTaskName, deadline: subTaskDeadline },
+                dataType: "html",
+                success: function (response) {
+                    subTaskContainer.replaceWith(response); // Thay ô nhập bằng SubTask mới
+                },
+                error: function () {
+                    alert("Có lỗi xảy ra, vui lòng thử lại!");
+                }
+            });
+        });
+
+        // 🛑 Khi bấm "Hủy"
+        $(document).on("click", ".cancel-subtask", function () {
+            $(this).closest(".subtask-input-container").remove(); // Xóa ô nhập
+        });
+
+        // Khi bấm vào tiêu đề, chuyển thành ô input để chỉnh sửa
+        $(document).on("click", ".task-title", function () {
+            var container = $(this).closest(".task-title-container");
+            container.find(".task-title").addClass("d-none"); // Ẩn tiêu đề h5
+            container.find(".edit-task-title").removeClass("d-none").focus(); // Hiện input
+        });
+
+        // Khi nhấn Enter hoặc mất focus, lưu dữ liệu bằng AJAX
+        $(document).on("blur keypress", ".edit-task-title", function (e) {
+            if (e.type === "keypress" && e.which !== 13) return; // Chỉ xử lý nếu là Enter hoặc blur
+
+            var inputField = $(this);
+            var newTitle = inputField.val();
+            var container = inputField.closest(".task-title-container");
+            var taskId = container.data("task-id");
+
+            if (!newTitle.trim()) return; // Không cho phép tiêu đề trống
+
+            $.ajax({
+                url: "/Task/UpdateTitle",
+                type: "POST",
+                data: { id: taskId, title: newTitle },
+                success: function () {
+                    container.find(".task-title").text(newTitle).removeClass("d-none");
+                    inputField.addClass("d-none"); // Ẩn input
+                },
+                error: function () {
+                    alert("Cập nhật tiêu đề thất bại!");
+                }
+            });
+        });
+
+        // 🟢 Thêm tính năng kéo thả vào danh sách SubTask
+        $(".subtask-list").sortable({
+            connectWith: ".subtask-list",
+            placeholder: "ui-state-highlight",
+            update: function (event, ui) {
+                var subTaskId = ui.item.data("subtask-id");
+                var newTaskId = ui.item.closest(".task-container").data("task-id");
+
+                // Gửi AJAX để cập nhật TaskId của SubTask
+                $.ajax({
+                    url: "/Task/UpdateSubTaskTask",
+                    type: "POST",
+                    data: { subTaskId: subTaskId, newTaskId: newTaskId },
+                    success: function (response) {
+                        console.log("Cập nhật thành công: " + response.message);
+                    },
+                    error: function () {
+                        alert("Có lỗi xảy ra khi cập nhật SubTask!");
+                    }
+                });
+            }
+        }).disableSelection();
+    });
+</script>

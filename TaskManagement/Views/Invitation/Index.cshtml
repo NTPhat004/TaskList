@@ -1,0 +1,46 @@
+﻿@model List<GroupInvitationModel>
+
+@{
+    ViewData["Title"] = "Lời mời";
+}
+
+<h3 class="mb-4">Lời mời vào nhóm</h3>
+
+<div id="invitation-container">
+    @Html.Partial("_InvitationList", Model)
+</div>
+
+@section Scripts {
+    <script>
+        function acceptInvitation(invitationId) {
+            $.ajax({
+                url: '@Url.Action("AcceptInvitation", "Invitation")',
+                type: 'POST',
+                data: { invitationId: invitationId },
+                success: function (result) {
+                    $('#invitation-container').html(result);
+                    toastr.success("Đã chấp nhận lời mời!");
+                },
+                error: function () {
+                    toastr.error("Có lỗi xảy ra.");
+                }
+            });
+        }
+        function rejectInvitation(invitationId) {
+            $.ajax({
+                url: '/Invitation/RejectInvitation',
+                type: 'POST',
+                data: { invitationId: invitationId },
+                success: function (result) {
+                    $('#invitation-container').html(result); // Cập nhật danh sách
+                    toastr.warning('Bạn đã từ chối lời mời.');
+
+                },
+                error: function () {
+                    toastr.error("Từ chối lời mời thất bại.");
+                }
+            });
+        }
+    </script>
+}
+
