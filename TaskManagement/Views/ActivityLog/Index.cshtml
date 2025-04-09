@@ -1,0 +1,40 @@
+﻿@model List<TaskManagement.Models.ActivityLogModel>
+@{
+    ViewData["Title"] = "Activity Logs";
+}
+
+<h4>Hoạt động gần đây</h4>
+
+<div class="mb-3">
+    <select id="log-source-select" class="form-select">
+        <option value="">-- Tất cả --</option>
+        <option value="Inbox">Lời mời</option>
+        <option value="PersonalTask">Việc cá nhân</option>
+        <option value="GroupTask">Nhóm</option>
+    </select>
+</div>
+
+<div id="activity-log-container">
+    @Html.Partial("_ActivityLogList", Model)
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#log-source-select").change(function () {
+                var selectedSource = $(this).val();
+                $.ajax({
+                    url: '/ActivityLog/GetLogsPartial',
+                    data: { source: selectedSource },
+                    type: 'GET',
+                    success: function (html) {
+                        $("#activity-log-container").html(html);
+                    },
+                    error: function () {
+                        Swal.fire("Lỗi", "Không thể tải hoạt động.", "error");
+                    }
+                });
+            });
+        });
+    </script>
+}

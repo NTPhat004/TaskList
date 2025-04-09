@@ -29,6 +29,31 @@ namespace TaskManagement.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ActivityLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Source = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Details = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "GETDATE()"),
+                    RelatedGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RelatedTaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RelatedSubTaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActivityLogs_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Groups",
                 columns: table => new
                 {
@@ -166,38 +191,6 @@ namespace TaskManagement.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                 });
-
-            migrationBuilder.CreateTable(
-                name: "ActivityLogs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubTaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActivityLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActivityLogs_SubTasks_SubTaskId",
-                        column: x => x.SubTaskId,
-                        principalTable: "SubTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ActivityLogs_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityLogs_SubTaskId",
-                table: "ActivityLogs",
-                column: "SubTaskId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLogs_UserId",

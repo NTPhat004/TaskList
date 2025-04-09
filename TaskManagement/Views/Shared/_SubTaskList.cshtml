@@ -1,0 +1,12 @@
+﻿@model SubTaskModel
+
+<div class="form-check">
+    <input class="form-check-input toggle-subtask" type="checkbox" value="" id="subtask-@Model.Id"
+    @(Model.IsCompleted ? "checked" : "") data-id="@Model.Id" />
+    <div class="form-check-label" for="subtask-@Model.Id">
+        <div class="step-title">@Model.Title</div>
+        <div class="step-description @(Model.IsCompleted ? "bg-success text-white px-2 py-1 rounded" : "")">
+            Hạn: @Model.DueDate?.ToString("dd/MM/yyyy")
+        </div>
+    </div>
+</div>

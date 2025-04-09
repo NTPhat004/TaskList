@@ -200,26 +200,37 @@ namespace TaskManagement.Data
             {
                 entity.ToTable("ActivityLogs");
 
-                entity.HasKey(al => al.Id);
+                entity.HasKey(e => e.Id);
 
-                entity.Property(al => al.Action)
-                      .IsRequired()
-                      .HasMaxLength(500);
+                entity.Property(e => e.Action)
+                    .IsRequired()
+                    .HasMaxLength(100);
 
-                entity.Property(al => al.Timestamp)
-                      .HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.Details)
+                    .HasMaxLength(1000);
 
-                // Quan hệ với UserModel (1 User có thể có nhiều hoạt động)
-                entity.HasOne(al => al.User)
-                      .WithMany()
-                      .HasForeignKey(al => al.UserId)
-                      .OnDelete(DeleteBehavior.Restrict); // Tránh vòng lặp xóa
+                entity.Property(e => e.Timestamp)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("GETDATE()");
 
-                // Quan hệ với SubTaskModel (1 SubTask có thể có nhiều hoạt động)
-                entity.HasOne(al => al.SubTask)
-                      .WithMany()
-                      .HasForeignKey(al => al.SubTaskId)
-                      .OnDelete(DeleteBehavior.Cascade); // Khi SubTask bị xóa, log cũng bị xóa
+                entity.Property(e => e.Source)
+                    .HasConversion<string>() // Lưu Enum dưới dạng string
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                // Khóa ngoại đến User
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Có thể thêm Index để truy vấn nhanh theo User hoặc Source
+                entity.HasIndex(e => e.UserId);
+
+                // Không bắt buộc nhưng vẫn có thể map các liên kết nếu muốn sử dụng navigation sau này
+                entity.Property(e => e.RelatedGroupId).IsRequired(false);
+                entity.Property(e => e.RelatedTaskId).IsRequired(false);
+                entity.Property(e => e.RelatedSubTaskId).IsRequired(false);
             });
 
             // 8 Cấu hình GroupInvitation

@@ -1,0 +1,16 @@
+﻿@model List<ActivityLogModel>
+
+<ul class="list-group">
+    @foreach (var log in Model)
+    {
+        <li class="list-group-item">
+            <strong>@log.Action</strong> - @log.Details
+            <br />
+            <small class="text-muted">@log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+        </li>
+    }
+    @if (!Model.Any())
+    {
+        <li class="list-group-item text-muted">Không có hoạt động nào.</li>
+    }
+</ul>

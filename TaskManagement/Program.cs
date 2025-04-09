@@ -54,6 +54,10 @@ builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<IGroupMemberRepository, GroupMemberRepositoy>();
 builder.Services.AddScoped<IGroupMemberService, GroupMemberService>();
 
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSignalR();

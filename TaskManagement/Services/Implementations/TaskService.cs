@@ -8,10 +8,11 @@ namespace TaskManagement.Services.Implementations
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
-
-        public TaskService(ITaskRepository taskRepository)
+        private readonly IActivityLogService _activityLogService;
+        public TaskService(ITaskRepository taskRepository,IActivityLogService activityLogService)
         {
             _taskRepository = taskRepository;
+            _activityLogService = activityLogService;
         }
 
         public async Task<List<TaskModel>> GetTasksByUserIdAsync(Guid userId)
@@ -56,6 +57,20 @@ namespace TaskManagement.Services.Implementations
         public async Task UpdateSubTaskAsync(SubTaskModel subTask)
         {
             await _taskRepository.UpdateAsync(subTask);
+        }
+
+        public async Task<SubTaskModel?> ToggleSubTaskStatusAsync(Guid subTaskId,Guid userId)
+        {
+            var subTask = await _taskRepository.GetSubTaskByIdAsync(subTaskId);
+            if (subTask == null) return null;
+
+            subTask.IsCompleted = !subTask.IsCompleted;
+            await _taskRepository.UpdateAsync(subTask);
+
+
+            await _activityLogService.LogSubTaskStatusChangeAsync(subTask,userId);
+
+            return subTask;
         }
     }
 

@@ -30,23 +30,36 @@ namespace TaskManagement.Migrations
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid>("SubTaskId")
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("RelatedGroupId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RelatedSubTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RelatedTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("Timestamp")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SubTaskId");
 
                     b.HasIndex("UserId");
 
@@ -257,19 +270,11 @@ namespace TaskManagement.Migrations
 
             modelBuilder.Entity("TaskManagement.Models.ActivityLogModel", b =>
                 {
-                    b.HasOne("TaskManagement.Models.SubTaskModel", "SubTask")
-                        .WithMany()
-                        .HasForeignKey("SubTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("TaskManagement.Models.UserModel", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("SubTask");
 
                     b.Navigation("User");
                 });

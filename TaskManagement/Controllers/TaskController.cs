@@ -95,6 +95,18 @@ namespace TaskManagement.Controllers
             return Ok(new { success = true, message = "SubTask đã được cập nhật!" });
         }
 
+        [HttpPost("ToggleSubTaskStatus")]
+        public async Task<IActionResult> ToggleSubTaskStatus(Guid subTaskId)
+        {
+            var userId = _accountService.GetCurrentUserId();
+            var subTask = await _taskService.ToggleSubTaskStatusAsync(subTaskId,userId);
+            if (subTask == null)
+                return BadRequest(subTaskId);
+
+            return PartialView("_SubTaskList", subTask); // ❗ Trả về content bên trong <li>
+        }
+
+
         private Guid GetCurrentUserId()
         {
             return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));

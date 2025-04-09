@@ -131,6 +131,24 @@
             });
         });
 
+        $(document).on("change", ".toggle-subtask", function () {
+            const checkbox = $(this);
+            const subTaskId = checkbox.data("id");
+            const li = checkbox.closest("li");
+
+            $.ajax({
+                url: "/Task/ToggleSubTaskStatus",
+                type: "POST",
+                data: { subTaskId: subTaskId },
+                success: function (html) {
+                    li.html(html); // thay nội dung trong <li>
+                },
+                error: function () {
+                    Swal.fire("Lỗi", "Không thể cập nhật trạng thái SubTask", "error");
+                }
+            });
+        });
+
         // 🟢 Thêm tính năng kéo thả vào danh sách SubTask
         $(".subtask-list").sortable({
             connectWith: ".subtask-list",
