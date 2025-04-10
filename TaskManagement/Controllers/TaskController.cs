@@ -69,13 +69,15 @@ namespace TaskManagement.Controllers
         [HttpPost("AddSubTask")]
         public async Task<IActionResult> AddSubTask(Guid taskId, string name, DateTime? deadline)
         {
+            var userId = _accountService.GetCurrentUserId();
             var newSubTask = new SubTaskModel
             {
                 Id = Guid.NewGuid(),
                 TaskId = taskId,
                 Title =  name,
                 DueDate = deadline,
-                IsCompleted = false
+                IsCompleted = false,
+                CreatedBy = userId
             };
 
             await _taskService.CreateSubTaskAsync(newSubTask);

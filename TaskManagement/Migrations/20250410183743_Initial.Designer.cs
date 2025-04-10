@@ -12,7 +12,7 @@ using TaskManagement.Data;
 namespace TaskManagement.Migrations
 {
     [DbContext(typeof(TaskListDbContext))]
-    [Migration("20250409173949_Initial")]
+    [Migration("20250410183743_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -173,6 +173,9 @@ namespace TaskManagement.Migrations
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
@@ -192,6 +195,8 @@ namespace TaskManagement.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedTo");
+
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("TaskId");
 
@@ -345,6 +350,12 @@ namespace TaskManagement.Migrations
                         .HasForeignKey("AssignedTo")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("TaskManagement.Models.UserModel", "User")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("TaskManagement.Models.TaskModel", "Task")
                         .WithMany("SubTasks")
                         .HasForeignKey("TaskId")
@@ -353,6 +364,8 @@ namespace TaskManagement.Migrations
                     b.Navigation("Assignee");
 
                     b.Navigation("Task");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TaskManagement.Models.TaskModel", b =>

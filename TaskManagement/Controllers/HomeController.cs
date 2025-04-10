@@ -1,22 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using TaskManagement.Models;
+using TaskManagement.Services;
+using TaskManagement.Services.Interfaces;
 
 namespace TaskManagement.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
+        private readonly IAccountService _accountService;
+        private readonly ITaskService _taskService;
+        public HomeController(ILogger<HomeController> logger,IAccountService accountService, ITaskService taskService)
         {
             _logger = logger;
+            _accountService = accountService;
+            _taskService = taskService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var userId = _accountService.GetCurrentUserId();
+            var subTasks = await _taskService.GetTodaySubTasksAsync(userId);
+            return View(subTasks);
         }
+
 
         public IActionResult Task()
         {

@@ -80,6 +80,19 @@ namespace TaskManagement.Repositories.Implementations
             _context.SubTasks.Update(subTask);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<SubTaskModel>> GetTodaySubTasksAsync(Guid userId)
+        {
+            var today = DateTime.Today;
+            return await _context.SubTasks
+                .Include(st => st.Task)
+                .Where(st =>
+                    st.DueDate.HasValue &&
+                    st.DueDate.Value.Date == today &&
+                    (st.CreatedBy == userId || st.AssignedTo == userId)
+                )
+                .ToListAsync();
+        }
     }
 
 }

@@ -13,6 +13,10 @@ namespace TaskManagement.Models
         public bool IsCompleted { get; set; }
         public DateTime? CompletedAt { get; set; }
 
+        public Guid CreatedBy { get; set; }
+
+        public UserModel User { get; set; }
+
         public TaskModel Task { get; set; }
         public UserModel? Assignee { get; set; }
     }

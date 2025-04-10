@@ -1,1 +1,32 @@
-﻿
+﻿@model List<SubTaskModel>
+
+<h4 class="mb-3">🗓️ Việc hôm nay</h4>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Bạn không có việc nào trong hôm nay.</div>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var subTask in Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm border rounded-pill" style="margin:5px 10px;" data-subtask-id="@subTask.Id">
+                <div class="form-check d-flex justify-content-between align-items-center w-100">
+                    <!-- Nút check + Tên Task bên trái -->
+                    <div class="d-flex align-items-center gap-2">
+                        <input class="form-check-input toggle-subtask custom-checkbox" type="checkbox"
+                               id="subtask-@subTask.Id"
+                                 data-id="@subTask.Id" />
+                        <label class="form-check-label mb-0 step-title" for="subtask-@subTask.Id">@subTask.Title</label>
+                    </div>
+
+                    <!-- Hạn ở bên phải -->
+                    <div class="step-description">
+                        Hạn: @subTask.DueDate?.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+            </li>
+        }
+    </ul>
+}

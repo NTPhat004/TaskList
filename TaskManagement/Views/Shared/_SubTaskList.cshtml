@@ -1,12 +1,16 @@
 ﻿@model SubTaskModel
 
-<div class="form-check">
-    <input class="form-check-input toggle-subtask" type="checkbox" value="" id="subtask-@Model.Id"
-    @(Model.IsCompleted ? "checked" : "") data-id="@Model.Id" />
-    <div class="form-check-label" for="subtask-@Model.Id">
-        <div class="step-title">@Model.Title</div>
-        <div class="step-description @(Model.IsCompleted ? "bg-success text-white px-2 py-1 rounded" : "")">
-            Hạn: @Model.DueDate?.ToString("dd/MM/yyyy")
-        </div>
+<div class="form-check d-flex justify-content-between align-items-center w-100">
+    <!-- Nút check + Tên Task bên trái -->
+    <div class="d-flex align-items-center gap-2">
+        <input class="form-check-input toggle-subtask custom-checkbox" type="checkbox"
+               id="subtask-@Model.Id"
+        @(Model.IsCompleted ? "checked" : "") data-id="@Model.Id" />
+        <label class="form-check-label mb-0 step-title" for="subtask-@Model.Id">@Model.Title</label>
+    </div>
+
+    <!-- Hạn ở bên phải -->
+    <div class="step-description @(Model.IsCompleted ? "bg-success text-white px-2 rounded" : "")">
+        Hạn: @Model.DueDate?.ToString("dd/MM/yyyy")
     </div>
 </div>

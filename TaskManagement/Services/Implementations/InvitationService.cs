@@ -11,11 +11,14 @@ namespace TaskManagement.Services.Implementations
         private readonly IInvitationRepository _repo;
         private readonly IUserRepository _userRepo;
         private readonly IGroupMemberService _groupMemberService;
-        public InvitationService(IInvitationRepository repo, IUserRepository userRepo, IGroupMemberService groupMemberService)
+        private readonly IActivityLogService _activityLogService;
+
+        public InvitationService(IInvitationRepository repo, IUserRepository userRepo, IGroupMemberService groupMemberService, IActivityLogService activityLogService)
         {
             _repo = repo;
             _userRepo = userRepo;
             _groupMemberService = groupMemberService;
+            _activityLogService = activityLogService;
         }
 
         //Tạo lời mời.
@@ -44,19 +47,34 @@ namespace TaskManagement.Services.Implementations
 
             if (invitation != null && invitation.Status == InvitationStatus.Pending)
             {
-                invitation.Status = InvitationStatus.Accepted;
-                await _repo.UpdateInvitationStatusAsync(invitation);
-
                 // Nếu có InviteeId thì thêm vào GroupMember
                 if (invitation.InviteeId.HasValue)
-                {
+                { 
+                    invitation.Status = InvitationStatus.Accepted;
+                    await _repo.UpdateInvitationStatusAsync(invitation);
                     await _groupMemberService.AddMemberAsync(invitation);
+                    await _activityLogService.LogInvitationResponseAsync
+                            (
+                               invitation.InviteeId.Value,
+                               invitation.GroupId,
+                               invitation.Group.Name,
+                               invitation.Inviter.Email,
+                               "Chấp nhận lời mời"
+                           );
+                    await _activityLogService.LogInvitationResultToInviterAsync
+                            (
+                                invitation.InviterId,
+                                invitation.GroupId,
+                                invitation.Group.Name,
+                                invitation.Invitee.Email,
+                                "Chấp nhận lời mời"
+                            );
                 }
-
                 return true;
             }
             return false;
         }
+
         //Từ chối lời mời
         public async Task<bool> RejectInvitationAsync(Guid invitationId)
         {
@@ -64,11 +82,29 @@ namespace TaskManagement.Services.Implementations
 
             if (invitation != null && invitation.Status == InvitationStatus.Pending)
             {
-                invitation.Status = InvitationStatus.Rejected;
-                await _repo.UpdateInvitationStatusAsync(invitation);
+                if (invitation.InviteeId.HasValue)
+                {
+                    invitation.Status = InvitationStatus.Rejected;
+                    await _repo.UpdateInvitationStatusAsync(invitation);
+                    await _activityLogService.LogInvitationResponseAsync
+                            (
+                               invitation.InviteeId.Value,
+                               invitation.GroupId,
+                               invitation.Group.Name,
+                               invitation.Inviter.Email,
+                               "Từ chối lời mời"
+                           );
+                    await _activityLogService.LogInvitationResultToInviterAsync
+                            (
+                                invitation.InviterId,
+                                invitation.GroupId,
+                                invitation.Group.Name,
+                                invitation.Invitee.Email,
+                                "Từ chối lời mời"
+                            );
+                }          
                 return true;
             }
-
             return false;
         }
 

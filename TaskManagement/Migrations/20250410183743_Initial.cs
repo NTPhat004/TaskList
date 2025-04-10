@@ -173,7 +173,8 @@ namespace TaskManagement.Migrations
                     AssignedTo = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsCompleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -190,6 +191,12 @@ namespace TaskManagement.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SubTasks_Users_CreatedBy",
+                        column: x => x.CreatedBy,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -231,6 +238,11 @@ namespace TaskManagement.Migrations
                 name: "IX_SubTasks_AssignedTo",
                 table: "SubTasks",
                 column: "AssignedTo");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubTasks_CreatedBy",
+                table: "SubTasks",
+                column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubTasks_TaskId",

@@ -1,17 +1,21 @@
 ﻿@model List<TaskModel>
 
-<!-- Nút Thêm Công Việc -->
-<button type="button" class="btn custom-btn mb-3" id="addTaskButton">
-    <i class="bi bi-plus"></i> Thêm Công Việc
-</button>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="mb-0 fw-bold">Việc cá nhân</h5>
+
+    <button type="button" class="btn btn-primary d-flex align-items-center gap-2" id="addTaskButton">
+        <i class="bi bi-journal-plus"></i> Thêm Mục
+    </button>
+</div>
 
 <!-- Danh sách Task -->
-<div id="taskList">
+<div class="p-4 bg-white rounded shadow-sm border" style="min-height:510px" id="taskList">
     @foreach (var task in Model)
     {
         @Html.Partial("_TaskItem", task)
     }
 </div>
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>

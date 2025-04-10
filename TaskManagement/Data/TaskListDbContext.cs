@@ -181,6 +181,14 @@ namespace TaskManagement.Data
                 entity.Property(st => st.CompletedAt)
                       .IsRequired(false);
 
+                entity.Property(st => st.CreatedBy)
+                        .IsRequired();
+
+                entity.HasOne(st => st.User)
+                      .WithMany() // hoặc .WithMany(u => u.SubTasks)
+                      .HasForeignKey(st => st.CreatedBy)
+                      .OnDelete(DeleteBehavior.Restrict);
+
                 // Quan hệ với TaskModel (1 Task có nhiều SubTask)
                 entity.HasOne(s => s.Task)
                          .WithMany(t => t.SubTasks)

@@ -72,6 +72,11 @@ namespace TaskManagement.Services.Implementations
 
             return subTask;
         }
+        public async Task<List<SubTaskModel>> GetTodaySubTasksAsync(Guid userId)
+        {
+            return await _taskRepository.GetTodaySubTasksAsync(userId);
+        }
+
     }
 
 }

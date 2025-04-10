@@ -17,6 +17,8 @@ namespace TaskManagement.Services.Interfaces
         Task<SubTaskModel> CreateSubTaskAsync(SubTaskModel subTask);
         Task UpdateSubTaskAsync(SubTaskModel subTask);
         Task<SubTaskModel?> ToggleSubTaskStatusAsync(Guid subTaskId, Guid userId);
+        Task<List<SubTaskModel>> GetTodaySubTasksAsync(Guid userId);
+
     }
 
 }
