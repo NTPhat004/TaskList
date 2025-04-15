@@ -1,0 +1,24 @@
+﻿@model TaskManagement.Models.ViewModels.SubTaskViewModel;
+
+<div class="table-row row align-items-center py-2 border-bottom">
+    <div class="col-3 text-truncate">@Model.TaskTitle</div>
+
+    <div class="col-3 text-truncate">@Model.SubTask.Title</div>
+
+    <div class="col-3">
+        <div class="d-flex align-items-center">
+            @foreach (var user in Model.SubTask.Assignments)
+            {
+                <img src="@user.User.ProfilePicture" class="rounded-circle me-1" style="width:28px; height:28px;" />
+            }
+            <button type="button" class="btn btn-sm border-0 shadow-none assign-toggle"
+                    data-subtask-id="@Model.SubTask.Id" data-task-id="@Model.SubTask.TaskId">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="assign-popup-container mt-1" id="assignPopup-@Model.SubTask.Id"></div>
+    </div>
+
+    <div class="col-3">@Model.SubTask.DueDate?.ToString("dd/MM/yyyy")</div>
+</div>

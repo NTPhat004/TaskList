@@ -15,12 +15,11 @@ namespace TaskManagement.Models
         public List<GroupMemberModel> GroupMemberships { get; set; } = new();
         public List<TaskModel> OwnedTasks { get; set; } = new();
 
-        public List<SubTaskModel> AssignedTasks { get; set; } = new();
+        // Quan hệ mới: danh sách SubTask được giao qua bảng trung gian
+        public ICollection<SubTaskAssignmentModel> AssignedSubTasks { get; set; }
 
         // Điều hướng tới lời mời
         public ICollection<GroupInvitationModel> SentInvitations { get; set; }
         public ICollection<GroupInvitationModel> ReceivedInvitations { get; set; }
-
     }
-
 }

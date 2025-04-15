@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskManagement.Models;
+using TaskManagement.Repositories.Implementations;
 using TaskManagement.Repositories.Interfaces;
 using TaskManagement.Services.Interfaces;
 
@@ -23,6 +24,14 @@ namespace TaskManagement.Services.Implementations
                 JoinedAt = DateTime.UtcNow
             };
             await _groupMember.AddMemberAsync(member);
+        }
+        public async Task<List<GroupMemberModel>> GetGroupMembersByGroupIdAsync(Guid groupId)
+        {
+            return await _groupMember.GetGroupMembersByGroupIdAsync(groupId);
+        }
+        public async Task<List<UserModel>> GetGroupMembersAsync(Guid groupId)
+        {
+            return await _groupMember.GetMembersWithUserByGroupId(groupId);
         }
     }
 }

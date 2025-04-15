@@ -15,6 +15,7 @@ namespace TaskManagement.Data
         public DbSet<SubTaskModel> SubTasks { get; set; }
         public DbSet<ActivityLogModel> ActivityLogs { get; set; }
         public DbSet<GroupInvitationModel> GroupInvitation { get; set; }
+        public DbSet<SubTaskAssignmentModel> SubTaskAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -58,13 +59,11 @@ namespace TaskManagement.Data
                       .HasForeignKey(t => t.OwnerId)
                       .OnDelete(DeleteBehavior.Restrict); // Tránh vòng lặp xóa
 
-                // Quan hệ với SubTaskModel (1 User có thể được phân công nhiều SubTask)
-                entity.HasMany(u => u.AssignedTasks)
-                      .WithOne(st => st.Assignee)
-                      .HasForeignKey(st => st.AssignedTo)
-                      .OnDelete(DeleteBehavior.SetNull); // Nếu User bị xóa, AssignedTo sẽ về null
+                entity.HasMany(u => u.AssignedSubTasks)
+                      .WithOne(a => a.User)
+                      .HasForeignKey(a => a.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
-
 
             // 3️ Cấu hình bảng Groups
             modelBuilder.Entity<GroupModel>(entity =>
@@ -98,7 +97,6 @@ namespace TaskManagement.Data
                       .HasForeignKey(t => t.GroupId)
                       .OnDelete(DeleteBehavior.Cascade); // Khi Group bị xóa, các Task của nhóm cũng bị xóa
             });
-            ;
 
             // 4️ Cấu hình bảng GroupMembers
             modelBuilder.Entity<GroupMemberModel>(entity =>
@@ -125,7 +123,6 @@ namespace TaskManagement.Data
                 entity.Property(gm => gm.Role)
                       .HasConversion<int>(); // Lưu enum dưới dạng int
             });
-
 
             // 5️ Cấu hình bảng Tasks
             modelBuilder.Entity<TaskModel>(entity =>
@@ -160,7 +157,6 @@ namespace TaskManagement.Data
                       .OnDelete(DeleteBehavior.Cascade); // Khi Task bị xóa, các SubTask cũng bị xóa
             });
 
-
             // 6️ Cấu hình bảng SubTasks
             modelBuilder.Entity<SubTaskModel>(entity =>
             {
@@ -184,9 +180,9 @@ namespace TaskManagement.Data
                 entity.Property(st => st.CreatedBy)
                         .IsRequired();
 
-                entity.HasOne(st => st.User)
-                      .WithMany() // hoặc .WithMany(u => u.SubTasks)
-                      .HasForeignKey(st => st.CreatedBy)
+                entity.HasOne(s => s.CreatedByUser)
+                      .WithMany()
+                      .HasForeignKey(s => s.CreatedBy)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 // Quan hệ với TaskModel (1 Task có nhiều SubTask)
@@ -194,14 +190,7 @@ namespace TaskManagement.Data
                          .WithMany(t => t.SubTasks)
                          .HasForeignKey(s => s.TaskId)
                          .OnDelete(DeleteBehavior.Cascade); // Xóa Task thì SubTask cũng bị xóa
-
-                // Quan hệ với UserModel (1 User có thể được giao nhiều SubTask)
-                entity.HasOne(st => st.Assignee)
-                      .WithMany(u => u.AssignedTasks)
-                      .HasForeignKey(st => st.AssignedTo)
-                      .OnDelete(DeleteBehavior.SetNull); // Khi User bị xóa, AssignedTo sẽ về null
             });
-
 
             // 7️ Cấu hình bảng ActivityLogs
             modelBuilder.Entity<ActivityLogModel>(entity =>
@@ -281,7 +270,25 @@ namespace TaskManagement.Data
                       .IsRequired();
             });
 
-        }
+            // 9 Cấu hình SubTaskAssignment
+            modelBuilder.Entity<SubTaskAssignmentModel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
 
+                // Quan hệ: Một SubTask có nhiều SubTaskAssignment
+                entity.HasOne(e => e.SubTask)
+                    .WithMany(t => t.Assignments)
+                    .HasForeignKey(e => e.SubTaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Quan hệ: Một User có nhiều SubTaskAssignment
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.AssignedSubTasks)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.SubTaskId, e.UserId }).IsUnique();
+            });
+        }
     }
 }

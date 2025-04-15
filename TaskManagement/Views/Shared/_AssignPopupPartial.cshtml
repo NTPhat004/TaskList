@@ -1,0 +1,24 @@
+﻿@model TaskManagement.Models.ViewModels.AssignPopupViewModel
+
+<div class="card shadow-sm p-2" style="width: 250px;">
+    <input type="text" class="form-control form-control-sm mb-2 search-member" placeholder="Tìm thành viên..." />
+
+    <div class="assign-member-list" style="max-height: 200px; overflow-y: auto;">
+        @foreach (var member in Model.GroupMembers)
+        {
+            var isAssigned = Model.AssignedUserIds.Contains(member.Id);
+            <div class="assign-item d-flex align-items-center justify-content-between p-1 rounded @(isAssigned ? "bg-light" : "")"
+                 data-user-id="@member.Id" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <img src="@member.ProfilePicture" class="rounded-circle me-2" style="width: 28px; height: 28px;" />
+                    <span>@member.Username</span>
+                </div>
+
+                @if (isAssigned)
+                {
+                    <span class="text-danger ms-2 unassign-icon" title="Huỷ phân công" style="font-size: 1rem;">×</span>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -19,5 +19,21 @@ namespace TaskManagement.Repositories.Implementations
             _context.GroupMembers.Add(member);
             await _context.SaveChangesAsync();
         }
+        public async Task<List<GroupMemberModel>> GetGroupMembersByGroupIdAsync(Guid groupId)
+        {
+            return await _context.GroupMembers
+                .Include(gm => gm.User)
+                .Where(gm => gm.GroupId == groupId)
+                .OrderBy(gm => gm.JoinedAt)
+                .ToListAsync();
+        }
+        public async Task<List<UserModel>> GetMembersWithUserByGroupId(Guid groupId)
+        {
+            return await _context.GroupMembers
+                .Where(gm => gm.GroupId == groupId)
+                .Include(gm => gm.User)
+                .Select(gm => gm.User)
+                .ToListAsync();
+        }
     }
 }

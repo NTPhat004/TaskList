@@ -1,6 +1,97 @@
 ﻿@model TaskManagement.Models.ViewModels.GroupTasksViewModel
 
-<h5 class="mb-4">Các công việc trong nhóm: @Model.Group.Name</h5>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="mb-0 fw-bold">Nhóm: @Model.Group.Name</h5>
+    <input type="hidden" id="groupIdHidden" value="@Model.Group.Id" />
+    <button type="button"
+            class="btn btn-primary d-flex align-items-center gap-2"
+            id="addTaskButton">
+        <i class="bi bi-journal-plus"></i> Thêm Mục
+    </button>
+</div>
+
+<!--List Công việc-->
+<div class="task-table bg-white border rounded shadow-sm p-3 mb-4 position-relative" style="min-height:510px">
+    <div class="table-header row fw-bold border-bottom pb-2">
+        <div class="col-1"></div>
+        <div class="col-2">Thuộc Mục</div>
+        <div class="col-3">Tên công việc</div>
+        <div class="col-3">Phân công</div>
+        <div class="col-2">Ngày đến hạn</div>
+        <div class="col-1"></div>
+    </div>
+
+    @foreach (var task in Model.Tasks) // TaskModel
+    {
+        foreach (var sub in task.SubTasks) // SubTaskModel
+        {
+            <div class="table-row row align-items-center py-2 border-bottom hover-task-row position-relative" style="cursor:pointer">
+
+                <div class="col-1 d-flex align-items-center gap-2">
+                    <input type="checkbox"
+                           class="form-check-input task-complete-checkbox"
+                           data-task-id="@task.Id"
+                    @(sub.IsCompleted ? "checked" : "") />
+                </div>
+
+                <div class="col-2 text-truncate task-title" data-subtask-id="@sub.Id">
+                    @task.Title
+                </div>
+                <div class="col-3 text-truncate subtask-title" id="subtask-title-@sub.Id">
+                    @sub.Title
+                </div>
+
+                <div class="col-3 position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            @{
+                                var assignedUsers = sub.Assignments.Select(a => a.User).ToList();
+                                var maxToShow = 5;
+                                var usersToShow = assignedUsers.Take(maxToShow).ToList();
+                                var remaining = assignedUsers.Count - maxToShow;
+                            }
+
+                            @foreach (var user in usersToShow)
+                            {
+                                <img src="~/images/default-avatar.jpg" class="rounded-circle me-1"
+                                     style="width: 28px; height: 28px;" title="@user.Username" />
+                            }
+
+                            @if (remaining > 0)
+                            {
+                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center me-1"
+                                     style="width: 28px; height: 28px; font-size: 0.8rem;" title="+@remaining người">
+                                    ...
+                                </div>
+                            }
+                        </div>
+
+                        <button type="button" class="btn btn-sm border-0 shadow-none assign-toggle"
+                                data-subtask-id="@sub.Id" data-task-id="@task.Id">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="assign-popup-container" style="position:absolute;z-index:11" id="assignPopup-@sub.Id"></div>
+                </div>
+
+                <div class="col-2">@sub.DueDate?.ToString("dd/MM/yyyy")</div>
+
+                <!-- 🔹 Icon ẩn hiện khi hover -->
+                <div class="col-1 text-end action-icon-container" style="display: none;">
+                    <button class="btn btn-sm btn-light more-task-info" data-task-id="@sub.Id" data-group-id="@Model.Group.Id">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    }
+    <button type="button"
+            class="btn btn-success rounded-circle position-absolute"
+            style="bottom: 20px; right: 20px; z-index: 10;"
+            id="btnAddSubTask">
+        <i class="bi bi-plus-lg fs-4"></i>
+    </button>
+</div>
 
 <!-- Modal nhập email -->
 <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
@@ -24,16 +115,76 @@
     </div>
 </div>
 
-<!-- Nút Thêm Công Việc -->
-<button type="button" class="btn custom-btn mb-3" id="addTaskButton">
-    <i class="bi bi-plus"></i> Thêm Công Việc
-</button>
-<!-- Danh sách Task -->
-<div id="taskList">
-    @foreach (var task in Model.Tasks)
-    {
-        @Html.Partial("_TaskItem", task)
-    }
+<!-- Modal Thêm Task -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm Mục Công Việc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Tên Mục</label>
+                    <input type="text" class="form-control" id="newTaskTitle" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-primary" id="saveNewTaskBtn">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm SubTask -->
+<div class="modal fade" id="addSubTaskModal" tabindex="-1" aria-labelledby="addSubTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm Công Việc Nhỏ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Tên Công Việc</label>
+                    <input type="text" class="form-control" id="subTaskTitle" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Thuộc Mục</label>
+                    <div id="taskSelectContainer">
+                        <!-- Sẽ được render bằng PartialView -->
+                        @Html.Partial("_TaskSelectPartial", Model.Tasks)
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ngày đến hạn</label>
+                    <input type="date" class="form-control" id="subTaskDueDate" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-primary" id="saveNewSubTaskBtn">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal-->
+<div class="modal fade" id="taskInfoModal" tabindex="-1" aria-labelledby="taskInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết công việc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" id="taskInfoContent">
+                <!-- Nội dung PartialView từ Controller sẽ render ở đây -->
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Sidebar danh sách thành viên -->
@@ -74,6 +225,7 @@
     </div>
 </div>
 
+
 <div id="toggle-members-sidebar" style="
     position: fixed;
     top: 20%;
@@ -96,51 +248,5 @@
 
 
 @section Scripts{
-    <script>
-        const sidebar = document.getElementById('members-sidebar');
-        const toggleBtn = document.getElementById('toggle-members-sidebar');
-        const toggleIcon = document.getElementById('toggle-icon');
-
-        let isSidebarOpen = false;
-
-        toggleBtn.addEventListener('click', function () {
-            if (isSidebarOpen) {
-                // Đóng sidebar
-                sidebar.style.right = '-300px';
-                toggleBtn.style.right = '0';
-                toggleIcon.className = 'bi bi-people-fill fs-5';
-            } else {
-                // Mở sidebar
-                sidebar.style.right = '0';
-                toggleBtn.style.right = '280px'; // nằm một phần trong sidebar
-                toggleIcon.className = 'bi bi-chevron-right fs-5';
-            }
-            isSidebarOpen = !isSidebarOpen;
-        });
-
-        $(document).ready(function () {
-            $("#btn-send-invite").click(function () {
-                const email = $("#invite-email").val().trim();
-                const groupId = "@Model.Group.Id"; // hoặc truyền groupId từ ViewModel
-
-                if (email === "") {
-                    toastr.warning("Vui lòng nhập email.");
-                    return;
-                }
-
-                $.ajax({
-                    type: "POST",
-                    url: "/Group/InviteMember",
-                    data: { groupId: groupId, email: email },
-                    success: function () {
-                        $('#inviteModal').modal('hide');
-                        toastr.success("Đã gửi lời mời.");
-                    },
-                    error: function () {
-                        toastr.error("Gửi lời mời thất bại.");
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="~/js/group.js?v=@DateTime.Now.Ticks"></script>
 }

@@ -1,0 +1,8 @@
+﻿@model IEnumerable<TaskManagement.Models.TaskModel>
+
+<select id="taskSelect" class="form-select">
+    @foreach (var task in Model)
+    {
+        <option value="@task.Id">@task.Title</option>
+    }
+</select>

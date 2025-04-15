@@ -107,3 +107,6 @@
             transform: rotate(45deg);
         }
 
+.hover-task-row:hover .action-icon-container {
+    display: block !important;
+}

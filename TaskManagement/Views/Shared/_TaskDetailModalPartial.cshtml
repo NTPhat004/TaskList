@@ -1,0 +1,124 @@
+﻿@model TaskManagement.Models.ViewModels.TaskDetailModalViewModel
+
+
+
+<form id="taskDetailForm">
+    <input type="hidden" name="SubTaskId" value="@Model.SubTask.Id" />
+
+    <div class="row">
+        <!-- Bên trái 70% -->
+        <div class="col-md-8">
+            <!-- Tên công việc -->
+            <div class="mb-3">
+                <label class="form-label">Tên công việc</label>
+
+                <!-- Phần hiển thị ban đầu -->
+                <div id="task-title-display" style="cursor: pointer;">
+                    <span>@Model.SubTask.Title</span>
+                    <i class="bi bi-pencil ms-2 text-muted"></i>
+                </div>
+
+                <!-- Phần chỉnh sửa -->
+                <div id="task-title-edit" class="d-none">
+                    <div class="border rounded p-2 shadow-sm bg-white">
+                        <input type="text" class="form-control mb-2" id="task-title-input" name="Title" value="@Model.SubTask.Title" />
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-sm btn-secondary" id="cancel-task-title">Đóng</button>
+                            <button type="button" class="btn btn-sm btn-primary" id="save-task-title">Lưu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Comment -->
+            <div class="mb-3">
+                <label class="form-label">Ghi chú / Bình luận</label>
+
+                <!-- Danh sách comment -->
+                <div class="border rounded p-2 mb-2" style="max-height: 250px; overflow-y: auto;" id="commentList">
+                    <!-- Example comment -->
+                    @* Lặp comment ở đây *@
+                    @* @foreach (var cmt in Model.Comments) { ... } *@
+                    <div class="d-flex mb-2">
+                        <img src="~/images/default-avatar.jpg" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                        <div>
+                            <div><strong>UserName</strong></div>
+                            <div>Nội dung comment...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nhập comment -->
+                <div class="d-flex align-items-center">
+                    <img src="~/images/default-avatar.jpg" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                    <input type="text" class="form-control" placeholder="Nhập bình luận..." id="commentInput" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Bên phải 30% -->
+        <div class="col-md-4">
+            <!-- Thuộc mục -->
+            <div class="mb-3">
+                <label class="form-label">Thuộc Mục</label>
+                <select class="form-select" name="TaskId">
+                    @foreach (var task in Model.Task)
+                    {
+                        if (task.Id == Model.SubTask.Task.Id)
+                        {
+                            <option value="@task.Id" selected>@task.Title</option>
+                        }
+                        else
+                        {
+                            <option value="@task.Id">@task.Title</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Ngày đến hạn -->
+            <div class="mb-3">
+                <label class="form-label">Ngày đến hạn</label>
+                <input type="date" class="form-control" name="DueDate"
+                       value="@(Model.SubTask.DueDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+            <!-- Phân công -->
+            <div class="mb-3">
+                <label class="form-label">Phân công</label>
+                <div class="d-flex flex-column gap-1">
+                    @foreach (var member in Model.GroupMembers)
+                    {
+                        var isChecked = Model.SubTask.Assignments?.Any(a => a.UserId == member.Id) ?? false;
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="AssignedUserIds"
+                                   value="@member.Id"
+                                   id="user-@member.Id"
+                            @(isChecked ? "checked" : "") />
+                            <label class="form-check-label" for="user-@member.Id">
+                                @member.User.Username
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Nhắc nhở -->
+            <div class="mb-3">
+                <label class="form-label">Thông báo khi đến hạn</label>
+                <select class="form-select" name="Reminder">
+                    <option value="None">Không nhắc</option>
+                    <option value="OnTime">Đúng giờ</option>
+                    <option value="Before15">Trước 15 phút</option>
+                    <option value="Before60">Trước 1 giờ</option>
+                    <option value="Before1440">Trước 1 ngày</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</form>

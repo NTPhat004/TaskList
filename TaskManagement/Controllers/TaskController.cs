@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TaskManagement.Models;
+using TaskManagement.Models.ViewModels;
 using TaskManagement.Services.Interfaces;
 
 namespace TaskManagement.Controllers
@@ -10,14 +12,19 @@ namespace TaskManagement.Controllers
     {
         private readonly IAccountService _accountService;
         private readonly ITaskService _taskService;
+        private readonly IGroupMemberService _groupMemberService;
+        private readonly IAssignmentService _assignmentService;
 
-        public TaskController(ITaskService taskService, IAccountService accountService)
+        public TaskController(ITaskService taskService, IAccountService accountService,IGroupMemberService groupMemberService, IAssignmentService assignmentService)
         {
 
             _taskService = taskService;
             _accountService = accountService;
+            _groupMemberService = groupMemberService;
+            _assignmentService = assignmentService;
         }
 
+        //Danh sách công việc cá nhân
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
@@ -26,6 +33,7 @@ namespace TaskManagement.Controllers
             return View("Task",tasks);
         }
 
+        //Thêm Task cá nhân
         [HttpPost("AddTask")]
         public async Task<IActionResult> AddTask()
         {
@@ -44,6 +52,7 @@ namespace TaskManagement.Controllers
             return PartialView("_TaskItem", newTask); // Trả về PartialView để render vào UI
         }
 
+        //Thay đổi tên Task 
         [HttpPost("UpdateTitle")]
         public async Task<IActionResult> UpdateTitle(Guid id, string title)
         {
@@ -63,7 +72,6 @@ namespace TaskManagement.Controllers
 
             return Ok();
         }
-
 
         //Thêm SubTask vào Task cụ thể (dùng AJAX)
         [HttpPost("AddSubTask")]
@@ -97,6 +105,7 @@ namespace TaskManagement.Controllers
             return Ok(new { success = true, message = "SubTask đã được cập nhật!" });
         }
 
+        //Check hoàn thành / bỏ hoàn thành Subtask
         [HttpPost("ToggleSubTaskStatus")]
         public async Task<IActionResult> ToggleSubTaskStatus(Guid subTaskId)
         {
@@ -108,10 +117,181 @@ namespace TaskManagement.Controllers
             return PartialView("_SubTaskList", subTask); // ❗ Trả về content bên trong <li>
         }
 
-
-        private Guid GetCurrentUserId()
+        //Thêm GroupTask (Việc nhóm)
+        [HttpPost("AddGroupTask")]
+        public async Task<IActionResult> AddGroupTask(Guid groupId, string title)
         {
-            return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = _accountService.GetCurrentUserId();
+
+            var newTask = new TaskModel
+            {
+                Id = Guid.NewGuid(),
+                GroupId = groupId,
+                IsGroupTask = true,
+                Title = title,
+                OwnerId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _taskService.CreateTaskAsync(newTask);
+
+            // Lấy lại danh sách Task của nhóm sau khi thêm
+            var tasks = await _taskService.GetGroupTasksAsync(groupId);
+
+            // Trả về PartialView danh sách task (dùng trong <select> của Modal SubTask)
+            return PartialView("_TaskSelectPartial", tasks);
         }
+
+        //Thêm GroupSubTask
+        [HttpPost("AddGroupSubTask")]
+        public async Task<IActionResult> AddGroupSubTask(Guid taskId, string title, DateTime? dueDate)
+        {
+            var userId = _accountService.GetCurrentUserId();
+
+            var newSubTask = new SubTaskModel
+            {
+                Id = Guid.NewGuid(),
+                TaskId = taskId,
+                Title = title,
+                DueDate = dueDate,
+                IsCompleted = false,
+                CreatedBy = userId,
+            };
+
+            await _taskService.CreateSubTaskAsync(newSubTask);
+
+            // Load lại task để có thông tin SubTask + Assignments
+            var task = await _taskService.GetTaskWithSubTasksAndAssignments(taskId);
+
+            var createdSub = task.SubTasks.FirstOrDefault(x => x.Id == newSubTask.Id);
+
+            return PartialView("_SubTaskRowPartial", new SubTaskViewModel
+            {
+                TaskTitle = task.Title,
+                SubTask = createdSub
+            });
+        }
+
+        //Hiển thị Nội dung SubTask để Edit.
+        [HttpGet("GetTaskDetailModal")]
+        public async Task<IActionResult> GetTaskDetailModal(Guid taskId,Guid groupId)
+        {
+            var subTask = await _taskService.GetSubTaskByIdAsync(taskId);
+            var groupMembers =  await _groupMemberService.GetGroupMembersByGroupIdAsync(groupId);
+            var task = await _taskService.GetGroupTasksAsync(groupId);
+
+            var viewModel = new TaskDetailModalViewModel
+            {
+                SubTask = subTask,
+                GroupMembers = groupMembers,
+                Task = task
+            };
+
+            return PartialView("_TaskDetailModalPartial", viewModel);
+        }
+
+        //Lấy danh sách thành viên trong nhóm để hiển thị ở mục phân công
+        [HttpGet("GetAssignPopup")]
+        public async Task<IActionResult> LoadAssignPopup(Guid subTaskId)
+        {
+            var subTask = await _taskService.GetSubTaskDetailAsync(subTaskId);
+            var groupMembers = await _groupMemberService.GetGroupMembersAsync(subTask.Task.GroupId.Value);
+
+            var viewModel = new AssignPopupViewModel
+            {
+                GroupMembers = groupMembers,
+                AssignedUserIds = subTask.Assignments.Select(a => a.UserId).ToList()
+            };
+
+            return PartialView("_AssignPopupPartial", viewModel);
+        }
+
+        //Xử lý phân công công việc
+        [HttpPost("ToggleAssignment")]
+        public async Task<IActionResult> ToggleAssignment(Guid subTaskId, Guid userId)
+        {
+            var isAssigned = await _assignmentService.ToggleAssignmentAsync(subTaskId, userId);
+            var assignedUsers = await _assignmentService.GetAssignedUsersAsync(subTaskId);
+
+            return Json(new
+            {
+                isAssigned,
+                assignedUsers = assignedUsers.Select(u => new
+                {
+                    id = u.Id,
+                    username = u.Username,
+                    profilePicture = u.ProfilePicture
+                })
+            });
+        }
+
+        //Thay đổi tên SubTask 
+        [HttpPost("UpdateSubTask")]
+        public async Task<IActionResult> UpdateSubTask(Guid id, string title, string type)
+        {
+            if (string.IsNullOrWhiteSpace(type))
+                return BadRequest("Thiếu loại cập nhật.");
+
+            if (type == "title")
+            {
+                if (string.IsNullOrWhiteSpace(title))
+                    return BadRequest("Tiêu đề không được để trống.");
+
+                var task = await _taskService.GetSubTaskByIdAsync(id);
+                if (task == null)
+                    return NotFound("Không tìm thấy công việc.");
+
+                task.Title = title;
+                await _taskService.UpdateSubTaskAsync(task);
+                return Ok();
+            }
+            else if (type == "parent")
+            {
+                if (!Guid.TryParse(title, out var taskId))
+                    return BadRequest("ID không hợp lệ.");
+
+                var subTask = await _taskService.GetSubTaskByIdAsync(id);
+                if (subTask == null)
+                    return NotFound("Không tìm thấy công việc.");
+                
+
+                subTask.TaskId = taskId;
+                await _taskService.UpdateSubTaskAsync(subTask);
+                return Ok();
+            }
+
+            return BadRequest("Loại cập nhật không hợp lệ.");
+        }
+
+        //// POST: Lưu thông tin Task
+        //[HttpPost]
+        //public async Task<IActionResult> SaveTaskDetail(TaskDetailModalInputModel model)
+        //{
+        //    var task = await _context.Tasks.FindAsync(model.TaskId);
+        //    if (task == null) return NotFound();
+
+        //    task.Title = model.Title;
+        //    task.DueDate = model.DueDate;
+
+        //    // Gán lại người được giao (nếu có logic liên quan SubTask thì bạn thêm)
+        //    var oldAssignments = _context.TaskAssignments.Where(a => a.TaskId == task.Id);
+        //    _context.TaskAssignments.RemoveRange(oldAssignments);
+
+        //    if (model.AssignedUserIds != null)
+        //    {
+        //        foreach (var userId in model.AssignedUserIds)
+        //        {
+        //            _context.TaskAssignments.Add(new TaskAssignmentModel
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                TaskId = task.Id,
+        //                UserId = userId
+        //            });
+        //        }
+        //    }
+
+        //    await _context.SaveChangesAsync();
+        //    return Ok();
+        //}
     }
 }

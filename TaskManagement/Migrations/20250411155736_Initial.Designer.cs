@@ -12,7 +12,7 @@ using TaskManagement.Data;
 namespace TaskManagement.Migrations
 {
     [DbContext(typeof(TaskListDbContext))]
-    [Migration("20250410183743_Initial")]
+    [Migration("20250411155736_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -161,13 +161,31 @@ namespace TaskManagement.Migrations
                     b.ToTable("Groups", (string)null);
                 });
 
-            modelBuilder.Entity("TaskManagement.Models.SubTaskModel", b =>
+            modelBuilder.Entity("TaskManagement.Models.SubTaskAssignmentModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AssignedTo")
+                    b.Property<Guid>("SubTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubTaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SubTaskAssignments");
+                });
+
+            modelBuilder.Entity("TaskManagement.Models.SubTaskModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CompletedAt")
@@ -193,8 +211,6 @@ namespace TaskManagement.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedTo");
 
                     b.HasIndex("CreatedBy");
 
@@ -343,14 +359,28 @@ namespace TaskManagement.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("TaskManagement.Models.SubTaskModel", b =>
+            modelBuilder.Entity("TaskManagement.Models.SubTaskAssignmentModel", b =>
                 {
-                    b.HasOne("TaskManagement.Models.UserModel", "Assignee")
-                        .WithMany("AssignedTasks")
-                        .HasForeignKey("AssignedTo")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("TaskManagement.Models.SubTaskModel", "SubTask")
+                        .WithMany("Assignments")
+                        .HasForeignKey("SubTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("TaskManagement.Models.UserModel", "User")
+                        .WithMany("AssignedSubTasks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SubTask");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskManagement.Models.SubTaskModel", b =>
+                {
+                    b.HasOne("TaskManagement.Models.UserModel", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -361,11 +391,9 @@ namespace TaskManagement.Migrations
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Assignee");
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Task");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TaskManagement.Models.TaskModel", b =>
@@ -393,6 +421,11 @@ namespace TaskManagement.Migrations
                     b.Navigation("Tasks");
                 });
 
+            modelBuilder.Entity("TaskManagement.Models.SubTaskModel", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
             modelBuilder.Entity("TaskManagement.Models.TaskModel", b =>
                 {
                     b.Navigation("SubTasks");
@@ -400,7 +433,7 @@ namespace TaskManagement.Migrations
 
             modelBuilder.Entity("TaskManagement.Models.UserModel", b =>
                 {
-                    b.Navigation("AssignedTasks");
+                    b.Navigation("AssignedSubTasks");
 
                     b.Navigation("GroupMemberships");
 

@@ -18,6 +18,11 @@ namespace TaskManagement.Repositories.Interfaces
         Task<SubTaskModel> CreateAsync(SubTaskModel subTask);
         Task UpdateAsync(SubTaskModel subTask);
         Task<List<SubTaskModel>> GetTodaySubTasksAsync(Guid userId);
+
+        Task<TaskModel> GetTaskWithSubTasksAndAssignmentsAsync(Guid taskId);
+
+        Task<SubTaskModel> GetByIdWithAssignmentsAsync(Guid subTaskId);
+
     }
 
 }

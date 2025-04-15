@@ -170,7 +170,6 @@ namespace TaskManagement.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    AssignedTo = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsCompleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -186,17 +185,36 @@ namespace TaskManagement.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SubTasks_Users_AssignedTo",
-                        column: x => x.AssignedTo,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
                         name: "FK_SubTasks_Users_CreatedBy",
                         column: x => x.CreatedBy,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubTaskAssignments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SubTaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubTaskAssignments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SubTaskAssignments_SubTasks_SubTaskId",
+                        column: x => x.SubTaskId,
+                        principalTable: "SubTasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SubTaskAssignments_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -235,9 +253,14 @@ namespace TaskManagement.Migrations
                 column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SubTasks_AssignedTo",
-                table: "SubTasks",
-                column: "AssignedTo");
+                name: "IX_SubTaskAssignments_SubTaskId",
+                table: "SubTaskAssignments",
+                column: "SubTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubTaskAssignments_UserId",
+                table: "SubTaskAssignments",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubTasks_CreatedBy",
@@ -271,6 +294,9 @@ namespace TaskManagement.Migrations
 
             migrationBuilder.DropTable(
                 name: "GroupMembers");
+
+            migrationBuilder.DropTable(
+                name: "SubTaskAssignments");
 
             migrationBuilder.DropTable(
                 name: "SubTasks");

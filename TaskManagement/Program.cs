@@ -57,6 +57,8 @@ builder.Services.AddScoped<IGroupMemberService, GroupMemberService>();
 builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
 builder.Services.AddHttpContextAccessor();
 
