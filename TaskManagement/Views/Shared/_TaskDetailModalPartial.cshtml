@@ -79,32 +79,67 @@
                 </select>
             </div>
 
-            <!-- Ngày đến hạn -->
-            <div class="mb-3">
+            <!--Ngày đến hạn-->
+            <div class="mb-3 position-relative">
                 <label class="form-label">Ngày đến hạn</label>
-                <input type="date" class="form-control" name="DueDate"
-                       value="@(Model.SubTask.DueDate?.ToString("yyyy-MM-dd"))" />
+
+                <!-- Nút hiển thị ngày + icon -->
+                <div class="due-date-trigger d-flex align-items-center" style="cursor: pointer;">
+                    <span class="me-2 due-date-text" data-subtask-id="@Model.SubTask.Id">
+                        @(Model.SubTask.DueDate?.ToString("dd/MM/yyyy") ?? "Chưa có")
+                    </span>
+                    <i class="bi bi-calendar-event fs-5 text-primary"></i>
+                </div>
+
+                <!-- Popup chọn lịch -->
+                <div class="calendar-popup bg-white border rounded shadow-sm p-2 position-absolute d-none" style="z-index: 1000;">
+                    <input type="text" class="form-control flatpickr-input" readonly />
+
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-secondary btn-close-calendar">Đóng</button>
+                        <button type="button" class="btn btn-sm btn-primary btn-save-calendar" data-subtask-id="@Model.SubTask.Id">Lưu</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Phân công -->
-            <div class="mb-3">
-                <label class="form-label">Phân công</label>
-                <div class="d-flex flex-column gap-1">
-                    @foreach (var member in Model.GroupMembers)
-                    {
-                        var isChecked = Model.SubTask.Assignments?.Any(a => a.UserId == member.Id) ?? false;
-                        <div class="form-check">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   name="AssignedUserIds"
-                                   value="@member.Id"
-                                   id="user-@member.Id"
-                            @(isChecked ? "checked" : "") />
-                            <label class="form-check-label" for="user-@member.Id">
-                                @member.User.Username
-                            </label>
-                        </div>
-                    }
+            <div class="col-3 position-relative">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center assigned-avatar-container" data-subtask-id="@Model.SubTask.Id">
+                        @{
+                            var assignedUsers = Model.SubTask.Assignments.Select(a => a.User).ToList();
+                            var maxToShow = 3;
+                            var usersToShow = assignedUsers.Take(maxToShow).ToList();
+                            var remaining = assignedUsers.Count - maxToShow;
+                        }
+
+                        @foreach (var user in usersToShow)
+                        {
+                            <img src="@(user.ProfilePicture ?? "/images/default-avatar.jpg")"
+                                 class="rounded-circle me-1"
+                                 style="width: 33px; height: 33px;"
+                                 title="@user.Username" />
+                        }
+
+                        @if (remaining > 0)
+                        {
+                            <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center me-1"
+                                 style="width: 28px; height: 28px; font-size: 0.8rem;" title="+@remaining người">
+                                ...
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Nút mở popup phân công -->
+                    <button type="button" class="btn btn-sm border-0 shadow-none list-assign-toggle"
+                            data-subtask-id="@Model.SubTask.Id">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                </div>
+
+                <!-- Chứa popup phân công -->
+                <div class="list-assign-popup-container d-none" style="position:absolute; z-index:11;" id="listAssignPopup-@Model.SubTask.Id">
+                    @Html.Partial("_AssignPopupPartial", Model.AssignPopupViewModel)
                 </div>
             </div>
 

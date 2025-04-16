@@ -177,14 +177,20 @@ namespace TaskManagement.Controllers
         public async Task<IActionResult> GetTaskDetailModal(Guid taskId,Guid groupId)
         {
             var subTask = await _taskService.GetSubTaskByIdAsync(taskId);
-            var groupMembers =  await _groupMemberService.GetGroupMembersByGroupIdAsync(groupId);
+            var groupMembers =  await _groupMemberService.GetGroupMembersAsync(groupId);
             var task = await _taskService.GetGroupTasksAsync(groupId);
+
+            var assignPopUp = new AssignPopupViewModel
+            {
+                GroupMembers = groupMembers,
+                AssignedUserIds = subTask.Assignments.Select(a => a.UserId).ToList()
+            };
 
             var viewModel = new TaskDetailModalViewModel
             {
                 SubTask = subTask,
-                GroupMembers = groupMembers,
-                Task = task
+                Task = task,
+                AssignPopupViewModel = assignPopUp
             };
 
             return PartialView("_TaskDetailModalPartial", viewModel);
@@ -229,69 +235,37 @@ namespace TaskManagement.Controllers
         [HttpPost("UpdateSubTask")]
         public async Task<IActionResult> UpdateSubTask(Guid id, string title, string type)
         {
-            if (string.IsNullOrWhiteSpace(type))
-                return BadRequest("Thiếu loại cập nhật.");
+            var subTask = await _taskService.GetSubTaskByIdAsync(id);
 
-            if (type == "title")
+            if (subTask == null) return NotFound("Không tìm thấy công việc.");
+
+            switch (type)
             {
-                if (string.IsNullOrWhiteSpace(title))
-                    return BadRequest("Tiêu đề không được để trống.");
+                case "title":
+                    if (string.IsNullOrWhiteSpace(title)) return BadRequest("Tiêu đề không được để trống.");
+                    subTask.Title = title;
+                    break;
 
-                var task = await _taskService.GetSubTaskByIdAsync(id);
-                if (task == null)
-                    return NotFound("Không tìm thấy công việc.");
+                case "parent":
+                    if (!Guid.TryParse(title, out Guid parentTaskId)) return BadRequest("Mục không hợp lệ.");
+                    subTask.TaskId = parentTaskId;
+                    break;
 
-                task.Title = title;
-                await _taskService.UpdateSubTaskAsync(task);
-                return Ok();
-            }
-            else if (type == "parent")
-            {
-                if (!Guid.TryParse(title, out var taskId))
-                    return BadRequest("ID không hợp lệ.");
+                case "due":
+                    if (!DateTime.TryParse(title, out DateTime dueDate)) return BadRequest("Ngày đến hạn không hợp lệ.");
+                    subTask.DueDate = dueDate;
+                    break;
 
-                var subTask = await _taskService.GetSubTaskByIdAsync(id);
-                if (subTask == null)
-                    return NotFound("Không tìm thấy công việc.");
-                
-
-                subTask.TaskId = taskId;
-                await _taskService.UpdateSubTaskAsync(subTask);
-                return Ok();
+                default:
+                    return BadRequest("Loại cập nhật không hợp lệ.");
             }
 
-            return BadRequest("Loại cập nhật không hợp lệ.");
+            await _taskService.UpdateSubTaskAsync(subTask);
+            return Ok();
         }
 
+
         //// POST: Lưu thông tin Task
-        //[HttpPost]
-        //public async Task<IActionResult> SaveTaskDetail(TaskDetailModalInputModel model)
-        //{
-        //    var task = await _context.Tasks.FindAsync(model.TaskId);
-        //    if (task == null) return NotFound();
 
-        //    task.Title = model.Title;
-        //    task.DueDate = model.DueDate;
-
-        //    // Gán lại người được giao (nếu có logic liên quan SubTask thì bạn thêm)
-        //    var oldAssignments = _context.TaskAssignments.Where(a => a.TaskId == task.Id);
-        //    _context.TaskAssignments.RemoveRange(oldAssignments);
-
-        //    if (model.AssignedUserIds != null)
-        //    {
-        //        foreach (var userId in model.AssignedUserIds)
-        //        {
-        //            _context.TaskAssignments.Add(new TaskAssignmentModel
-        //            {
-        //                Id = Guid.NewGuid(),
-        //                TaskId = task.Id,
-        //                UserId = userId
-        //            });
-        //        }
-        //    }
-
-        //    await _context.SaveChangesAsync();
-        //    return Ok();
-        //}
     }
 }

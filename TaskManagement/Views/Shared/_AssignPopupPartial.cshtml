@@ -10,7 +10,10 @@
             <div class="assign-item d-flex align-items-center justify-content-between p-1 rounded @(isAssigned ? "bg-light" : "")"
                  data-user-id="@member.Id" style="cursor: pointer;">
                 <div class="d-flex align-items-center">
-                    <img src="@member.ProfilePicture" class="rounded-circle me-2" style="width: 28px; height: 28px;" />
+                    <img src="@(member.ProfilePicture ?? "/images/default-avatar.jpg")"
+                         class="rounded-circle me-2"
+                         style="width: 33px; height: 33px;"
+                         title="@member.Username" />
                     <span>@member.Username</span>
                 </div>
 

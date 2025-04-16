@@ -133,6 +133,7 @@
             success: function (response) {
                 $("#taskInfoContent").html(response);
                 $("#taskInfoModal").modal("show");
+                initDueDateFlatpickr();
             },
             error: function () {
                 toastr.error("Không thể tải thông tin công việc.");
@@ -173,8 +174,16 @@ $(document).on("input", ".search-member", function () {
 $(document).on('click', '.assign-item', function () {
     const $item = $(this);
     const userId = $item.data('user-id');
-    const popupId = $item.closest('.assign-popup-container').attr('id');
-    const subTaskId = popupId.replace('assignPopup-', '');
+
+    // Tìm container chứa assign để lấy subTaskId phù hợp cả trong List và Detail
+    const $container = $item.closest('.assign-popup-container, .list-assign-popup-container');
+
+    let subTaskId = $container.attr('id')?.replace('assignPopup-', '').replace('listAssignPopup-', '');
+
+    // Nếu không có id thì fallback tìm data-subtask-id gần nhất
+    if (!subTaskId) {
+        subTaskId = $item.closest('[data-subtask-id]').data('subtask-id');
+    }
 
     $.ajax({
         type: 'POST',
@@ -184,18 +193,14 @@ $(document).on('click', '.assign-item', function () {
             if (res.isAssigned) {
                 $item.addClass('bg-light');
 
-                // Nếu chưa có dấu ❌ thì thêm vào
                 if ($item.find('.unassign-icon').length === 0) {
                     $item.append('<span class="text-danger ms-2 unassign-icon" title="Huỷ phân công" style="font-size: 1rem;">×</span>');
                 }
             } else {
                 $item.removeClass('bg-light');
-
-                // Xoá icon ❌ nếu có
                 $item.find('.unassign-icon').remove();
             }
-
-            updateAssignedAvatars(subTaskId, res.assignedUsers);
+            updateAssignedAvatarsDetail(subTaskId, res.assignedUsers);
         },
         error: function () {
             alert('Lỗi khi phân công người dùng.');
@@ -203,23 +208,40 @@ $(document).on('click', '.assign-item', function () {
     });
 });
 
-// Update icon avatar vào ô phân công
-function updateAssignedAvatars(subTaskId, users) {
-    const avatarContainer = $(`.assign-toggle[data-subtask-id="${subTaskId}"]`)
-        .closest('.col-3')
-        .find('.d-flex')
-        .first();
+// Thêm / xóa icon User trong phân công
+function updateAssignedAvatarsDetail(subTaskId, users) {
+    const avatarContainer = $(`.assigned-avatar-container[data-subtask-id="${subTaskId}"]`);
 
-    avatarContainer.find('img').remove(); // Xóa avatar cũ
+    if (!avatarContainer.length) return;
 
-    users.forEach(user => {
+    // Xóa toàn bộ avatar và dấu "..."
+    avatarContainer.empty();
+
+    const maxToShow = 3;
+    const usersToShow = users.slice(0, maxToShow);
+    const remaining = users.length - maxToShow;
+
+    // Thêm avatar
+    usersToShow.forEach(user => {
         const img = $('<img>').attr({
-            src: "/images/default - avatar.jpg",
-            class: 'rounded-circle me-1'
-        }).css({ width: '28px', height: '28px' });
+            src: user.profilePicture || '/images/default-avatar.jpg',
+            class: 'rounded-circle me-1',
+            title: user.username
+        }).css({ width: '33px', height: '33px' });
 
-        avatarContainer.prepend(img);
+        avatarContainer.append(img);
     });
+
+    // Nếu dư người thì hiển thị dấu "..."
+    if (remaining > 0) {
+        const moreIcon = $(`
+            <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center me-1"
+                 style="width: 33px; height: 33px; font-size: 0.8rem;" title="+${remaining} người">
+                ...
+            </div>
+        `);
+        avatarContainer.append(moreIcon);
+    }
 }
 
 //Click ra ngoài để đóng popup phân công
@@ -277,6 +299,7 @@ $(document).on('click', '#save-task-title', function () {
     });
 });
 
+// Xử lý thay đổi ngày đến hạn
 $(document).on('change', 'select[name="TaskId"]', function () {
     const taskId = $(this).val();
     const taskTitle = $(this).find('option:selected').text().trim();
@@ -300,3 +323,94 @@ $(document).on('change', 'select[name="TaskId"]', function () {
         }
     });
 });
+
+// Hiện lịch khi click icon
+$(document).on("click", ".due-date-trigger", function () {
+    $(".calendar-popup").addClass("d-none"); // Ẩn popup khác
+    $(this).siblings(".calendar-popup").removeClass("d-none");
+});
+
+// Đóng lịch
+$(document).on("click", ".btn-close-calendar", function () {
+    $(this).closest(".calendar-popup").addClass("d-none");
+});
+
+// Lưu ngày đã chọn
+$(document).on("click", ".btn-save-calendar", function () {
+    const popup = $(this).closest(".calendar-popup");
+    const input = popup.find(".flatpickr-input");
+    const selectedDate = input.data("selected-date");
+    const subTaskId = $(this).data("subtask-id");
+
+    if (!selectedDate) {
+        alert("Vui lòng chọn ngày.");
+        return;
+    }
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const day = ('0' + date.getDate()).slice(-2);
+        const month = ('0' + (date.getMonth() + 1)).slice(-2);
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    $.ajax({
+        url: '/Task/UpdateSubTask',
+        method: 'POST',
+        data: {
+            id: subTaskId,
+            title: selectedDate,
+            type: 'due'
+        },
+        success: function () {
+            popup.addClass("d-none");
+
+            const formattedDate = formatDate(selectedDate);
+
+            // ✅ Cập nhật trong phần chi tiết
+            $(`.due-date-text[data-subtask-id="${subTaskId}"]`).text(formattedDate);
+
+            // ✅ Cập nhật ngoài danh sách
+            $(`.due-date-display[data-subtask-id="${subTaskId}"]`).text(formattedDate);
+        },
+        error: function () {
+            alert("Lỗi khi cập nhật ngày đến hạn.");
+        }
+    });
+});
+
+//Ẩn / hiện Popup phân công thành viên
+$(document).on('click', '.list-assign-toggle', function (e) {
+    e.stopPropagation(); // Không lan ra ngoài để tránh đóng ngay
+
+    const subTaskId = $(this).data('subtask-id');
+    const popup = $(`#listAssignPopup-${subTaskId}`);
+
+    // Ẩn tất cả popup khác
+    $('.list-assign-popup-container').not(popup).addClass('d-none');
+
+    // Toggle popup hiện tại
+    popup.toggleClass('d-none');
+});
+
+// Ẩn popup phân công thành viên khi bấm ra ngoài
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('.list-assign-popup-container').length &&
+        !$(e.target).closest('.list-assign-toggle').length) {
+        $('.list-assign-popup-container').addClass('d-none');
+    }
+});
+
+function initDueDateFlatpickr() {
+    $(".flatpickr-input").each(function () {
+        flatpickr(this, {
+            inline: true,
+            defaultDate: $(this).val() || null,
+            onChange: function (selectedDates, dateStr) {
+                $(this._input).data("selected-date", dateStr);
+            }
+        });
+    });
+}
+

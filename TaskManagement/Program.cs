@@ -10,6 +10,8 @@ using TaskManagement.Repositories.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using TaskManagement.Hubs;
 using TaskManagement.Providers;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,13 @@ builder.Services.AddDbContext<TaskListDbContext>(options =>
 // Đọc thông tin từ appsettings.json
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+// Đăng ký dịch vụ Hangfire
+builder.Services.AddHangfire(config =>
+{
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("TaskListConnection"));
+});
+builder.Services.AddHangfireServer();
 
 // Cấu hình xác thực
 builder.Services
@@ -89,6 +98,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -102,6 +112,8 @@ app.Use(async (context, next) =>
     }
     await next();
 });
+
+app.UseHangfireDashboard("/hangfire");
 
 app.MapHub<NotificationHub>("/notificationHub");
 

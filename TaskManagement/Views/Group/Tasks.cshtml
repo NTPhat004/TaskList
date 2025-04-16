@@ -43,7 +43,7 @@
 
                 <div class="col-3 position-relative">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center assigned-avatar-container" data-subtask-id="@sub.Id">
                             @{
                                 var assignedUsers = sub.Assignments.Select(a => a.User).ToList();
                                 var maxToShow = 5;
@@ -53,8 +53,10 @@
 
                             @foreach (var user in usersToShow)
                             {
-                                <img src="~/images/default-avatar.jpg" class="rounded-circle me-1"
-                                     style="width: 28px; height: 28px;" title="@user.Username" />
+                                <img src="@(user.ProfilePicture ?? "/images/default-avatar.jpg")"
+                                     class="rounded-circle me-1"
+                                     style="width: 28px; height: 28px;"
+                                     title="@user.Username" />
                             }
 
                             @if (remaining > 0)
@@ -66,6 +68,7 @@
                             }
                         </div>
 
+
                         <button type="button" class="btn btn-sm border-0 shadow-none assign-toggle"
                                 data-subtask-id="@sub.Id" data-task-id="@task.Id">
                             <i class="bi bi-chevron-down"></i>
@@ -74,7 +77,9 @@
                     <div class="assign-popup-container" style="position:absolute;z-index:11" id="assignPopup-@sub.Id"></div>
                 </div>
 
-                <div class="col-2">@sub.DueDate?.ToString("dd/MM/yyyy")</div>
+                <div class="col-2 due-date-display" data-subtask-id="@sub.Id">
+                    @sub.DueDate?.ToString("dd/MM/yyyy")
+                </div>
 
                 <!-- 🔹 Icon ẩn hiện khi hover -->
                 <div class="col-1 text-end action-icon-container" style="display: none;">
